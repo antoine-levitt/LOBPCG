@@ -123,7 +123,6 @@ function ortho(X, Y, BY; tol=1e-10)
         # eps(), the loop will terminate, even if BY'Y != 0
         growth_factor*eps(real(eltype(X))) < tol && break
 
-
         niter > 10 && error("Ortho is failing badly, this should never happen")
         niter += 1
     end
@@ -148,6 +147,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
     buf_X = zero(X)
     buf_P = zero(X)
 
+    X = ortho(X, tol=ortho_tol)[1]
     AX = A*X
     # full_X/AX/BX will always store the full (including locked) X.
     # X/AX/BX only point to the active part
