@@ -121,7 +121,7 @@ function ortho(X, Y, BY; tol=1e-10)
 
         # If we're at a fixed point, growth_factor is 1 and if tol >
         # eps(), the loop will terminate, even if BY'Y != 0
-        growth_factor*eps() < tol && break
+        growth_factor*eps(real(eltype(X))) < tol && break
 
 
         niter > 10 && error("Ortho is failing badly, this should never happen")
