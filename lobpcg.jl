@@ -169,7 +169,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
     end
     nlocked = 0
     niter = 1
-    λs = zeros(M)
+    λs = [(X[:,n]'*AX[:,n]) / (X[:,n]'BX[:,n]) for n=1:M]
     new_X = X
     new_AX = AX
     new_BX = BX
@@ -196,6 +196,11 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
             perturb_maxiter = 20
             cX, λs = RR(Y, AY, BY, M-nlocked, perturb_tol=perturb_tol, perturb_maxiter=perturb_maxiter)
 
+            # Update X. By contrast to some other implementations, we
+            # wait on updating P because we have to know which vectors
+            # to lock (and therefore the residuals) before computing P
+            # only for the unlocked vectors. This results in better
+            # convergence.
             new_X = Y*cX
             new_AX = AY*cX
             if B != I
@@ -222,6 +227,9 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
                 nlocked += 1
                 # println("locked $nlocked")
             else
+                # we lock in order, assuming that the lowest
+                # eigenvectors converge first; might be tricky
+                # otherwise
                 break
             end
         end
