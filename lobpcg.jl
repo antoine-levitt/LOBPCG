@@ -3,9 +3,11 @@
 ## TODO write a version that doesn't assume that B is well-conditionned, and doesn't reuse B applications
 ## TODO it seems there is a lack of orthogonalization immediately after locking, maybe investigate this to save on some choleskys
 
+# vprintln(args...) = println(args...)  # Uncomment for output
+vprintln(args...) = nothing
+
+
 using LinearAlgebra
-using Random
-using PyPlot # for tests
 # using LazyArrays
 
 # Perform a Rayleigh-Ritz for the N first eigenvectors.
@@ -37,7 +39,7 @@ function ortho(X; tol=1e-10)
             success = true
         catch err
             @assert isa(err, PosDefException)
-            # println("fail")
+            vprintln("fail")
             # see https://arxiv.org/pdf/1809.11085.pdf for a nice analysis
             # We are not being very clever here; but this should very rarely happen so it should be OK
             α = 10000
@@ -80,7 +82,7 @@ function ortho(X; tol=1e-10)
         # a good a posteriori error is that X'X - I is eps()*κ(R)^2;
         # in practice this seems to be sometimes very overconservative
         success && eps(real(eltype(X)))*condR^2 < tol && break
-        # println(norm(X'X - I), ", ", norm((X/R)'*(X/R) - I), ", ", cond(R)^2*eps())
+        vprintln(norm(X'X - I), ", ", norm((X/R)'*(X/R) - I), ", ", cond(R)^2*eps())
 
         nchol > 10 && error("Ortho is failing badly, this should never happen")
     end
@@ -126,7 +128,7 @@ function ortho(X, Y, BY; tol=1e-10)
         niter > 10 && error("Ortho is failing badly, this should never happen")
         niter += 1
     end
-    println(ninners) # get how many Choleskys are performed
+    vprintln(ninners) # get how many Choleskys are performed
 
     # @assert (norm(BY'X)) < tol
     # @assert (norm(X'X-I)) < tol
@@ -222,7 +224,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
         for i=nlocked+1:M
             if resids[i,niter] < tol
                 nlocked += 1
-                # println("locked $nlocked")
+                vprintln("locked $nlocked")
             else
                 # we lock in order, assuming that the lowest
                 # eigenvectors converge first; might be tricky
@@ -326,47 +328,3 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
 
     full_X, resids
 end
-
-function main()
-
-    N = 500
-    M = 10
-    figure()
-    offset = 1
-    Random.seed!(offset)
-    α = 1. # use this to make the problem easier (α < 1) or harder (α > 1)
-    A = Diagonal(sort(abs.(rand(N)).^α))
-
-    β = 4
-    D = Diagonal(sort(abs.(randn(N)).^β))
-    B = randn(N,N)
-    B,_ = qr(B)
-    B = Array(B)
-    B = B*D*B'
-
-
-    X,_ = qr(randn(N,M))
-    X = Array(X)
-    while norm(X'*B*X - I) > 1e-10
-        O = Hermitian(X'*B*X)
-        U = cholesky(O).U
-        X .= X/U
-    end
-
-    # loose tolerance
-    tol = 1e-4
-    ortho_tol = 1e-6 # This uses less orthogonalizations steps than the default
-    X, resids = LOBPCG(A, X, B, I, tol, 200, ortho_tol=ortho_tol)
-    figure()
-    semilogy(resids', "-x")
-
-    
-    # # tight tolerance
-    # tol = 1e-12
-    # ortho_tol = 2eps()
-    # X, resids = LOBPCG(A, X, B, I, tol, 200, ortho_tol=ortho_tol)
-    # figure()
-    # semilogy(resids', "-x")
-
-end
-main()
