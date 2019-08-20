@@ -144,7 +144,7 @@ end
 
 function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real(eltype(X))))
     N,M = size(X)
-    resids = zeros(M, maxiter)
+    resids = zeros(real(eltype(X)), M, maxiter)
     buf_X = zero(X)
     buf_P = zero(X)
 
@@ -247,7 +247,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
             # orthogonalization, see Hetmaniuk & Lehoucq, and Duersch et. al.
             # cP = copy(cX)
             # cP[Xn_indices,:] .= 0
-            e = zeros(size(Y,2), M-prev_nlocked)
+            e = zeros(eltype(X), size(Y,2), M-prev_nlocked)
             for i in 1:length(Xn_indices)
                 e[Xn_indices[i], i] = 1
             end
