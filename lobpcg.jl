@@ -82,7 +82,6 @@ function ortho(X; tol=1e-10)
         # a good a posteriori error is that X'X - I is eps()*κ(R)^2;
         # in practice this seems to be sometimes very overconservative
         success && eps(real(eltype(X)))*condR^2 < tol && break
-        vprintln(norm(X'X - I), ", ", norm((X/R)'*(X/R) - I), ", ", cond(R)^2*eps())
 
         nchol > 10 && error("Ortho is failing badly, this should never happen")
     end
