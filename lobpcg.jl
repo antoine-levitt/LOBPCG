@@ -8,11 +8,8 @@ using Random
 using PyPlot # for tests
 # using LazyArrays
 
-# Perform a Rayleigh-Ritz for the N first eigenvectors. Returns the
-# new eigenvectors, and Xn+1 - Xn, orthogonalized against Xn, as well
-# as their AX and BX. The A/B updates are orthogonal, so there is no
-# accuracy loss there
-function RR(X, AX, BX, N; perturb_tol=Inf, perturb_maxiter=100)
+# Perform a Rayleigh-Ritz for the N first eigenvectors.
+function RR(X, AX, BX, N)
     F = eigen(Hermitian(X'AX))
     F.vectors[:,1:N], F.values[1:N]
 end
@@ -192,9 +189,8 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
                 BY = hcat(BX,BR)
             end
 
-            perturb_tol = 1e-3
-            perturb_maxiter = 20
-            cX, λs = RR(Y, AY, BY, M-nlocked, perturb_tol=perturb_tol, perturb_maxiter=perturb_maxiter)
+
+            cX, λs = RR(Y, AY, BY, M-nlocked)
 
             # Update X. By contrast to some other implementations, we
             # wait on updating P because we have to know which vectors
@@ -202,6 +198,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
             # only for the unlocked vectors. This results in better
             # convergence.
             new_X = Y*cX
+            # cX is orthogonal, so there is no accuracy loss there
             new_AX = AY*cX
             if B != I
                 new_BX = BY*cX
