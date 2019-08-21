@@ -20,7 +20,7 @@ end
 # Returns the new X, the number of Cholesky factorizations algorithm, and the
 # growth factor by which small perturbations of X can have been
 # magnified
-function ortho(X; tol=1e-10)
+function ortho(X; tol=2eps(real(eltype(X)))
     local R
 
     # # Uncomment for "gold standard"
@@ -42,9 +42,10 @@ function ortho(X; tol=1e-10)
             vprintln("fail")
             # see https://arxiv.org/pdf/1809.11085.pdf for a nice analysis
             # We are not being very clever here; but this should very rarely happen so it should be OK
-            α = 10000
-            n_bad = 0
+            α = 100
+            nbad = 0
             while true
+                println(norm(X'X-I))
                 O += α*eps(real(eltype(X)))*norm(X)^2*I
                 α *= 10
                 try
