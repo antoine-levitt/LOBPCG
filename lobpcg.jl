@@ -92,20 +92,33 @@ function ortho(X; tol=2eps(real(eltype(X))))
     X, nchol, growth_factor
 end
 
-# Find X that is orthogonal, and B-orthogonal to Y, up to a tolerance tol.
-function ortho(X, Y, BY; tol=1e-10)
-    # First normalize
+# Randomize the columns of X if the norm is below tol
+function drop!(X, tol=2eps(real(eltype(X))))
+    dropped = []
     for i=1:size(X,2)
         n = norm(@views X[:,i])
-        # TODO randomize when n is exactly 0
-        X[:,i] /= n
+        if n <= tol
+            X[:,i] = randn(eltype(X), size(X,1))
+            push!(dropped, i)
+        end
     end
+    dropped
+end
 
+# Find X that is orthogonal, and B-orthogonal to Y, up to a tolerance tol.
+function ortho(X, Y, BY; tol=2eps(real(eltype(X))))
     niter = 1
     ninners = zeros(Int,0)
     while true
         BYX = BY'X
         X = X - Y*BYX
+        # If the orthogonalization has produced results below 2eps, we drop them
+        # This is to be able to orthogonalize eg [1;0] against [e^iθ;0],
+        # as can happen in extreme cases in the ortho(cP, cX)
+        dropped = drop!(X)
+        if dropped != []
+            X[:, dropped] = X[:, dropped] - Y*BY'*X[:,dropped]
+        end
         if norm(BYX) < tol && niter > 1
             push!(ninners, 0)
             break
