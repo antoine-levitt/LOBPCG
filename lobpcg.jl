@@ -160,10 +160,16 @@ end
 ### After each RR step, the B-orthonormal X and P are deduced by an orthogonal rotation from Y
 ### R is then recomputed, and orthonormalized explicitly wrt BX and BP
 ### We reuse applications of A/B when it is safe to do so, ie only with orthogonal transformations
-
-function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real(eltype(X))))
+function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100;
+                ortho_tol=2eps(real(eltype(X))),
+                m_to_check=size(X,2) # break when m_to_check eigenvectors are converged
+                )
     N,M = size(X)
+    @assert size(A) == (N,N)
+    @assert m_to_check <= M
     resids = zeros(real(eltype(X)), M, maxiter)
+    3M < N || error("You are asking for too many eigenpairs")
+
     buf_X = zero(X)
     buf_P = zero(X)
 
@@ -250,7 +256,7 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
                 break
             end
         end
-        if nlocked == M
+        if nlocked >= m_to_check
             X .= new_X
             # AX .= new_AX
             # BX .= new_BX
@@ -344,5 +350,5 @@ function LOBPCG(A, X, B=I, precon=I, tol=1e-10, maxiter=100; ortho_tol=2eps(real
         niter <= maxiter || break
     end
 
-    full_X, resids
+    full_X, resids[:,1:niter]
 end
