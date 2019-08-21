@@ -16,6 +16,41 @@ function RR(X, AX, BX, N)
     F.vectors[:,1:N], F.values[1:N]
 end
 
+# Returns an approximate Cholesky factor for O
+function safe_cholesky(O)
+    nchol = 0
+    fail = false
+    local R
+    try
+        R = cholesky(O).U
+        nchol += 1
+    catch err
+        @assert isa(err, PosDefException)
+        vprintln("fail")
+        # see https://arxiv.org/pdf/1809.11085.pdf for a nice analysis
+        # We are not being very clever here; but this should very rarely happen so it should be OK
+        α = 100
+        nbad = 0
+        while true
+            O += α*eps(real(eltype(O)))*norm(O)*I
+            α *= 10
+            try
+                R = cholesky(O).U
+                nchol += 1
+                break
+            catch err
+                @assert isa(err, PosDefException)
+            end
+            nbad += 1
+            if nbad > 10
+                error("Cholesky shifting is failing badly, this should never happen")
+            end
+        end
+        fail = true
+    end
+    R, nchol, fail
+end
+
 # Orthogonalizes X to tol
 # Returns the new X, the number of Cholesky factorizations algorithm, and the
 # growth factor by which small perturbations of X can have been
@@ -33,35 +68,8 @@ function ortho(X; tol=2eps(real(eltype(X))))
     nchol = 0
     while true
         O = Hermitian(X'X)
-        try
-            R = cholesky(O).U
-            nchol += 1
-            success = true
-        catch err
-            @assert isa(err, PosDefException)
-            vprintln("fail")
-            # see https://arxiv.org/pdf/1809.11085.pdf for a nice analysis
-            # We are not being very clever here; but this should very rarely happen so it should be OK
-            α = 100
-            nbad = 0
-            while true
-                println(norm(X'X-I))
-                O += α*eps(real(eltype(X)))*norm(X)^2*I
-                α *= 10
-                try
-                    R = cholesky(O).U
-                    nchol += 1
-                    break
-                catch err
-                    @assert isa(err, PosDefException)
-                end
-                nbad += 1
-                if nbad > 10
-                    error("Cholesky shifting is failing badly, this should never happen")
-                end
-            end
-            success = false
-        end
+        R, nchol_iter, fail = safe_cholesky(O)
+        nchol += nchol_iter
         invR = inv(R)
         X = X*invR # we do not use X/R because we use invR next
 
@@ -82,7 +90,7 @@ function ortho(X; tol=2eps(real(eltype(X))))
 
         # a good a posteriori error is that X'X - I is eps()*κ(R)^2;
         # in practice this seems to be sometimes very overconservative
-        success && eps(real(eltype(X)))*condR^2 < tol && break
+        !fail && eps(real(eltype(X)))*condR^2 < tol && break
 
         nchol > 10 && error("Ortho(X) is failing badly, this should never happen")
     end
