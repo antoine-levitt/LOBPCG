@@ -20,7 +20,7 @@ end
 # Returns the new X, the number of Cholesky factorizations algorithm, and the
 # growth factor by which small perturbations of X can have been
 # magnified
-function ortho(X; tol=2eps(real(eltype(X)))
+function ortho(X; tol=2eps(real(eltype(X))))
     local R
 
     # # Uncomment for "gold standard"
