@@ -57,7 +57,7 @@ function ortho(X; tol=2eps(real(eltype(X)))
                 end
                 nbad += 1
                 if nbad > 10
-                    error("Ortho is failing badly, this should never happen")
+                    error("Cholesky shifting is failing badly, this should never happen")
                 end
             end
             success = false
@@ -84,7 +84,7 @@ function ortho(X; tol=2eps(real(eltype(X)))
         # in practice this seems to be sometimes very overconservative
         success && eps(real(eltype(X)))*condR^2 < tol && break
 
-        nchol > 10 && error("Ortho is failing badly, this should never happen")
+        nchol > 10 && error("Ortho(X) is failing badly, this should never happen")
     end
 
     # @assert norm(X'X - I) < tol
@@ -125,7 +125,7 @@ function ortho(X, Y, BY; tol=1e-10)
         growth_factor*eps(real(eltype(X))) < tol && break
 
 
-        niter > 10 && error("Ortho is failing badly, this should never happen")
+        niter > 10 && error("Ortho(X,Y) is failing badly, this should never happen")
         niter += 1
     end
     vprintln(ninners) # get how many Choleskys are performed
