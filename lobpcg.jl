@@ -107,6 +107,11 @@ end
 
 # Find X that is orthogonal, and B-orthogonal to Y, up to a tolerance tol.
 function ortho(X, Y, BY; tol=2eps(real(eltype(X))))
+    for i=1:size(X,2)
+        n = norm(@views X[:,i])
+        X[:,i] /= n
+    end
+
     niter = 1
     ninners = zeros(Int,0)
     while true
