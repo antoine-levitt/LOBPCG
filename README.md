@@ -1,3 +1,7 @@
+# THIS REPOSITORY IS NOT MAINTAINED
+
+Please use the version in DFTK.jl for now.
+
 # LOBPCG
 
 Implementation of the LOBPCG algorithm, seeking optimal performance without compromising on stability. The code is written for readability, and is not fully optimized yet (ie it allocates a lot of memory). The most time-consuming parts (BLAS3 and matvecs) should be OK though. It follows the scheme of Hetmaniuk & Lehoucq (see also the refinements in Duersch et. al.), with the following modifications:
